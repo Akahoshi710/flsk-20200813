@@ -1,5 +1,5 @@
 # splite3をimportする
-import sqlite3
+import sqlite3,datetime
 # flaskをimportしてflaskを使えるようにする
 from flask import Flask , render_template , request , redirect , session
 # appにFlaskを定義して使えるようにしています。Flask クラスのインスタンスを作って、 app という変数に代入しています。
@@ -86,10 +86,11 @@ def bbs():
         c.execute("select name from user where id = ?", (user_id,))
         # fetchoneはタプル型
         user_info = c.fetchone()
-        c.execute("select id,comment from bbs where userid = ? order by id", (user_id,))
+        # 削除フラグが０のみを取得する（0=通常、1=削除）
+        c.execute("select id,comment,datetime from bbs where userid = ? and delete_flg = 0 order by id", (user_id,))
         comment_list = []
         for row in c.fetchall():
-            comment_list.append({"id": row[0], "comment": row[1]})
+            comment_list.append({"id": row[0], "comment": row[1],"datetime": row[2]})
 
         c.close()
         return render_template('bbs.html' , user_info = user_info , comment_list = comment_list)
@@ -100,12 +101,15 @@ def bbs():
 @app.route('/add', methods=["POST"])
 def add():
     user_id = session['user_id']
+    # 投稿日時取得
+    date2 = datetime.datetime.now()
+    print(date2)
     # フォームから入力されたアイテム名の取得
     comment = request.form.get("comment")
     conn = sqlite3.connect('service.db')
     c = conn.cursor()
     # DBにデータを追加する
-    c.execute("insert into bbs values(null,?,?)", (user_id, comment))
+    c.execute("insert into bbs values(null,?,?,?,?)", (user_id, comment,date2,0))
     conn.commit()
     conn.close()
     return redirect('/bbs')
@@ -164,7 +168,8 @@ def del_task():
     id = int(id)
     conn = sqlite3.connect("service.db")
     c = conn.cursor()
-    c.execute("delete from bbs where id = ?", (id,))
+    # 削除時は、削除フラグを１にする
+    c.execute("update bbs set delete_flg = 1 where id = ?", (id,))
     conn.commit()
     c.close()
     return redirect("/bbs")
