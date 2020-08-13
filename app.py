@@ -103,13 +103,13 @@ def add():
     user_id = session['user_id']
     # 投稿日時取得
     date2 = datetime.datetime.now()
-    print(date2)
+    datetime_text = date2.strftime("%Y/%m/%d %H:%M")
     # フォームから入力されたアイテム名の取得
     comment = request.form.get("comment")
     conn = sqlite3.connect('service.db')
     c = conn.cursor()
     # DBにデータを追加する
-    c.execute("insert into bbs values(null,?,?,?,?)", (user_id, comment,date2,0))
+    c.execute("insert into bbs values(null,?,?,?,?)", (user_id, comment,datetime_text,0))
     conn.commit()
     conn.close()
     return redirect('/bbs')
